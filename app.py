@@ -34,10 +34,16 @@ from src.detector import MotionDetector
 from src.visualizer import FrameVisualizer
 from src.recorder import VideoRecorder, MotionLogger, SnapshotManager
 
+import tempfile
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
-SNAPSHOT_FOLDER = os.path.join(BASE_DIR, "snapshots")
-OUTPUT_FOLDER = os.path.join(BASE_DIR, "outputs")
+IS_VERCEL = bool(os.environ.get("VERCEL"))
+STORAGE_DIR = tempfile.gettempdir() if IS_VERCEL else BASE_DIR
+
+UPLOAD_FOLDER = os.path.join(STORAGE_DIR, "uploads")
+SNAPSHOT_FOLDER = os.path.join(STORAGE_DIR, "snapshots")
+OUTPUT_FOLDER = os.path.join(STORAGE_DIR, "outputs")
+
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(SNAPSHOT_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
@@ -90,6 +96,7 @@ def background_processor(
     method: str,
     blur_kernel: int = 21,
     threshold_val: int = 25,
+    max_frames: int = None,
 ):
     global processing_state
     try:
@@ -147,6 +154,8 @@ def background_processor(
                 break
 
             frame_idx += 1
+            if max_frames and frame_idx >= max_frames:
+                break
             curr_time_sec = frame_idx / fps
 
             # 1. Motion Detection
@@ -320,7 +329,14 @@ def start_processing():
         processing_state["output_video_url"] = f"/videos/outputs/{output_filename}?t={int(time.time())}"
         processing_state["csv_url"] = f"/download/csv?t={int(time.time())}"
 
-    # Launch background thread
+    if IS_VERCEL:
+        # On Vercel serverless, run synchronously to avoid background thread suspension
+        background_processor(
+            input_path, output_path, csv_path, min_area, method, blur_kernel, threshold_val, max_frames=90
+        )
+        return jsonify({"success": True, "serverless": True, "message": "Motion detection completed on serverless"})
+
+    # Launch background thread for local/dedicated server
     t = threading.Thread(
         target=background_processor,
         args=(input_path, output_path, csv_path, min_area, method, blur_kernel, threshold_val),
@@ -328,7 +344,7 @@ def start_processing():
     )
     t.start()
 
-    return jsonify({"success": True, "message": "Motion detection started"})
+    return jsonify({"success": True, "serverless": False, "message": "Motion detection started"})
 
 
 @app.route("/api/progress")

@@ -227,6 +227,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      if (data.serverless) {
+        progressBarFill.style.width = '100%';
+        progressPctText.textContent = '100%';
+        progressStatusText.textContent = 'Completed! Loading telemetry & results...';
+        setTimeout(loadResults, 500);
+        return;
+      }
+
       // Start Polling progress
       startPollingProgress();
     } catch (err) {
