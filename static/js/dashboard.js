@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const loadedFileSize = document.getElementById('loadedFileSize');
   const clearFileBtn = document.getElementById('clearFileBtn');
   const useSampleBtn = document.getElementById('useSampleBtn');
+  const useTrafficBtn = document.getElementById('useTrafficBtn');
 
   const methodSelect = document.getElementById('methodSelect');
   const minAreaSlider = document.getElementById('minAreaSlider');
@@ -156,13 +157,17 @@ document.addEventListener('DOMContentLoaded', () => {
     setNavStatus('System Idle', false);
   }
 
-  // Quick Start Sample Video
+  // Quick Start Sample Video 1 (Indoor)
   useSampleBtn.addEventListener('click', async () => {
     useSampleBtn.disabled = true;
-    useSampleBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading Sample...';
+    useSampleBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading Demo 1...';
 
     try {
-      const res = await fetch('/api/use_sample', { method: 'POST' });
+      const res = await fetch('/api/use_sample', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'indoor' }),
+      });
       const data = await res.json();
       if (data.success) {
         activeFilename = data.filename;
@@ -170,17 +175,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
         uploadPlaceholder.classList.add('hidden');
         fileLoadedState.classList.remove('hidden');
-        loadedFileName.textContent = 'sample_input.mp4 (Indoor Reception)';
+        loadedFileName.textContent = data.label || 'sample_input.mp4';
         loadedFileSize.textContent = '~1.0 MB';
 
         startBtn.disabled = false;
-        setNavStatus('Sample Video Ready', false);
+        setNavStatus('Demo 1 Ready', false);
       }
     } catch (err) {
       alert(`Error loading sample: ${err.message}`);
     } finally {
       useSampleBtn.disabled = false;
-      useSampleBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Use Built-in Test Video (sample_input.mp4)';
+      useSampleBtn.innerHTML = '<i class="fa-solid fa-person-walking"></i> Demo 1: Indoor Reception Camera (sample_input.mp4)';
+    }
+  });
+
+  // Quick Start Sample Video 2 (Traffic)
+  useTrafficBtn.addEventListener('click', async () => {
+    useTrafficBtn.disabled = true;
+    useTrafficBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading Demo 2...';
+
+    try {
+      const res = await fetch('/api/use_sample', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'traffic' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        activeFilename = data.filename;
+        activeVideoUrl = data.url;
+
+        uploadPlaceholder.classList.add('hidden');
+        fileLoadedState.classList.remove('hidden');
+        loadedFileName.textContent = data.label || 'demo_traffic.mp4';
+        loadedFileSize.textContent = '~1.9 MB';
+
+        startBtn.disabled = false;
+        setNavStatus('Demo 2 Ready', false);
+      }
+    } catch (err) {
+      alert(`Error loading traffic demo: ${err.message}`);
+    } finally {
+      useTrafficBtn.disabled = false;
+      useTrafficBtn.innerHTML = '<i class="fa-solid fa-car-side"></i> Demo 2: Street Traffic Camera (demo_traffic.mp4)';
     }
   });
 
@@ -191,6 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // UI state updates
     startBtn.disabled = true;
     useSampleBtn.disabled = true;
+    useTrafficBtn.disabled = true;
     setNavStatus('Processing Video...', true);
 
     progressSection.classList.remove('hidden');
@@ -222,6 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
         alert(`Error starting processing: ${data.error}`);
         startBtn.disabled = false;
         useSampleBtn.disabled = false;
+        useTrafficBtn.disabled = false;
         setNavStatus('System Idle', false);
         progressSection.classList.add('hidden');
         return;
@@ -241,6 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
       alert(`Request failed: ${err.message}`);
       startBtn.disabled = false;
       useSampleBtn.disabled = false;
+      useTrafficBtn.disabled = false;
       setNavStatus('System Idle', false);
     }
   });
@@ -292,6 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setNavStatus('Completed', false);
       startBtn.disabled = false;
       useSampleBtn.disabled = false;
+      useTrafficBtn.disabled = false;
       progressSection.classList.add('hidden');
 
       // 1. Video Comparison Player

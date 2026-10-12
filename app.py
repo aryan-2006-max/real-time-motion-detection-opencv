@@ -273,15 +273,29 @@ def upload_video():
 
 @app.route("/api/use_sample", methods=["POST"])
 def use_sample_video():
-    sample_file = os.path.join(BASE_DIR, "sample_input.mp4")
-    if not os.path.exists(sample_file):
-        from generate_sample_video import generate_sample_video
-        generate_sample_video(sample_file)
+    data = request.get_json(silent=True) or {}
+    sample_type = data.get("type", "indoor")
+
+    if sample_type == "traffic":
+        filename = "demo_traffic.mp4"
+        sample_file = os.path.join(BASE_DIR, filename)
+        if not os.path.exists(sample_file):
+            from generate_traffic_demo import generate_traffic_demo
+            generate_traffic_demo(sample_file)
+        name_label = "demo_traffic.mp4 (Street Intersection)"
+    else:
+        filename = "sample_input.mp4"
+        sample_file = os.path.join(BASE_DIR, filename)
+        if not os.path.exists(sample_file):
+            from generate_sample_video import generate_sample_video
+            generate_sample_video(sample_file)
+        name_label = "sample_input.mp4 (Indoor Reception)"
 
     return jsonify({
         "success": True,
-        "filename": "sample_input.mp4",
-        "url": "/videos/root/sample_input.mp4",
+        "filename": filename,
+        "label": name_label,
+        "url": f"/videos/root/{filename}",
     })
 
 
@@ -304,9 +318,9 @@ def start_processing():
         blur_kernel += 1
 
     # Determine input path
-    if filename == "sample_input.mp4":
-        input_path = os.path.join(BASE_DIR, "sample_input.mp4")
-        input_stream_url = "/videos/root/sample_input.mp4"
+    if filename in ["sample_input.mp4", "demo_traffic.mp4"]:
+        input_path = os.path.join(BASE_DIR, filename)
+        input_stream_url = f"/videos/root/{filename}"
     else:
         input_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
         input_stream_url = f"/videos/uploads/{filename}"
