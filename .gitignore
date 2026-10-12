@@ -8,12 +8,18 @@ venv/
 .venv/
 env/
 
+# Video media files (do not commit large binaries to git)
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.webm
+
 # Uploaded and generated processing files
 uploads/*
 !uploads/.gitkeep
 outputs/*
 !outputs/.gitkeep
-output_detected.mp4
 
 # IDE & OS
 .vscode/
